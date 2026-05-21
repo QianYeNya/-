@@ -1,6 +1,6 @@
 window.cloudSystem = {
     enableCloud: true,
-    GITEE_TOKEN: "你的_TOKEN", // 记得填你的 Token
+    GITEE_TOKEN: "8808042adc1356fdd75500e85acc1567", // 记得填你的 Token
 
     _getHeaders: function() {
         return {
