@@ -27,9 +27,21 @@ window.cloudSystem = {
     },
 
     upload: async function(username, data) {
-        if (!this.enableCloud || this.GITEE_TOKEN.includes("TOKEN")) return false;
+        console.log("🚀 [上传流程] 开始触发..."); // 第 1 步
+        if (!this.enableCloud) {
+            console.error("❌ [上传流程] 失败：云端功能未开启");
+            return false;
+        }
+        if (this.GITEE_TOKEN.includes("TOKEN")) {
+            console.error("❌ [上传流程] 失败：Token 未正确设置");
+            return false;
+        }
+
         try {
+            console.log("🔍 [上传流程] 正在寻找用户存档...");
             const gistId = await this._findUserGist(username);
+            console.log("🔍 [上传流程] 找到 GistID:", gistId);
+            
             const fileName = `rogue_${username}.json`;
             const jsonString = JSON.stringify(data, null, 4);
             const base64Data = btoa(unescape(encodeURIComponent(jsonString)));
@@ -43,18 +55,29 @@ window.cloudSystem = {
                 };
 
             const method = gistId ? 'PATCH' : 'POST';
-            const baseUrl = gistId ? `https://gitee.com/api/v5/gists/${gistId}` : `https://gitee.com/api/v5/gists`;
-            const url = `${baseUrl}?access_token=${this.GITEE_TOKEN}`;
+            const url = (gistId ? `https://gitee.com/api/v5/gists/${gistId}` : `https://gitee.com/api/v5/gists`) + `?access_token=${this.GITEE_TOKEN}`;
+            
+            console.log("🌐 [上传流程] 准备发起网络请求至:", url);
             
             const response = await fetch(url, {
                 method: method,
                 headers: { 'Content-Type': 'application/json;charset=UTF-8' },
                 body: JSON.stringify(payload)
             });
-            return response.ok;
-        } catch (err) {
-            console.error("上传失败:", err);
-            return false;
+
+            console.log("🌐 [上传流程] 请求已发出，状态码:", response.status);
+            
+            if (!response.ok) {
+                const errText = await response.text();
+                console.error("❌ [上传流程] 服务器返回错误:", errText);
+                return false;
+            }
+
+            console.log("✅ [上传流程] 上传成功！");
+            return true;
+        } catch (err) { 
+            console.error("🔥 [上传流程] 代码崩溃:", err);
+            return false; 
         }
     },
 
