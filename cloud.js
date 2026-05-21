@@ -33,23 +33,38 @@ const cloudSystem = {
         try {
             const gistId = await this._findUserGist(username);
             const fileName = `rogue_${username}.json`;
-            const payload = {
-                access_token: this.GITEE_TOKEN,
-                description: `rogue_save_${username}`,
-                public: false,
-                files: { [fileName]: { content: JSON.stringify(data, null, 4) } }
-            };
+            
+            // 构造精简的请求体
+            const payload = gistId ? 
+                { files: { [fileName]: { content: JSON.stringify(data, null, 4) } } } : 
+                { 
+                    description: `rogue_save_${username}`,
+                    public: false,
+                    files: { [fileName]: { content: JSON.stringify(data, null, 4) } } 
+                };
+
+            // 打印出来看一下到底发了什么，方便你在控制台 debug
+            console.log("🚀 即将发送的 payload:", JSON.stringify(payload));
 
             const method = gistId ? 'PATCH' : 'POST';
-            const url = gistId ? `https://gitee.com/api/v5/gists/${gistId}` : `https://gitee.com/api/v5/gists`;
+            const baseUrl = gistId ? `https://gitee.com/api/v5/gists/${gistId}` : `https://gitee.com/api/v5/gists`;
+            const url = `${baseUrl}?access_token=${this.GITEE_TOKEN}`;
             
             const response = await fetch(url, {
                 method: method,
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 'Content-Type': 'application/json;charset=UTF-8' },
                 body: JSON.stringify(payload)
             });
+
+            if (!response.ok) {
+                const errText = await response.text();
+                console.error("❌ Gitee 报错内容:", errText); // 这里会打印出服务器拒绝的真实原因
+            }
             return response.ok;
-        } catch (err) { return false; }
+        } catch (err) { 
+            console.error("🔥 崩溃:", err);
+            return false; 
+        }
     },
 
     // 下载存档
