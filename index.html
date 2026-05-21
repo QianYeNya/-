@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>校园肉鸽控制终端</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="login-screen" class="container login-wrapper" style="display: flex;">
+        <div class="card login-card">
+            <h1 class="title">🎯 校园肉鸽</h1>
+            <h3 style="color:#a9a9a9;">系统登录</h3>
+            <input type="text" id="username" placeholder="请输入你的特工代号" autocomplete="off" style="text-align: center; margin-bottom: 20px;">
+            <button class="btn btn-action" id="login-btn" onclick="app.login()">进入系统</button>
+        </div>
+    </div>
+
+    <div id="main-screen" class="app-layout" style="display: none;">
+        <div class="sidebar">
+            <div class="player-info">
+                <div class="avatar-container" onclick="app.changeAvatar()">
+                    <img id="player-avatar" src="" alt="头像" style="display:none;">
+                    <span id="avatar-placeholder">👤</span>
+                </div>
+                
+                <div style="display: flex; align-items: baseline; justify-content: center; gap: 8px; margin: 10px 0 5px 0;">
+                    <h3 id="current-user" onclick="app.changeName()" style="cursor:pointer; margin: 0;"></h3>
+                    <button class="btn-small" style="background:#3498db; color:#fff; padding:2px 6px; font-size:11px; border-radius:3px;" onclick="app.manualCloudUpload()">☁️ 覆盖至云端</button>
+                </div>
+                <span id="sync-status" style="font-size: 11px; color: #aaa; font-weight: normal; margin-bottom: 5px; display:block;">就绪</span>
+                
+                <div style="font-size: 13px; color: #4dabf7; margin-bottom: 5px;" id="rep-level-name">声望等阶加载中...</div>
+                
+                <div style="background: rgba(241, 196, 15, 0.08); padding: 10px; border-radius: 6px; border: 1px dashed #f1c40f; text-align: left; margin-bottom: 10px;">
+                    <div style="font-size: 12px; color: #f1c40f; display: flex; justify-content: space-between; align-items: center; font-weight: bold;">
+                        <span>🛡️ 阵线庇护: <span id="shield-count">0 / 2</span></span>
+                        <button class="use-btn" style="background:#f1c40f; color:#000; padding:2px 8px; border-radius:3px;" onclick="app.useShieldManual()">激活</button>
+                    </div>
+                </div>
+
+                <div class="multiplier-box" id="multiplier-display">总倍率计算中...</div>
+            </div>
+            <hr>
+            <div class="section-title" style="display: flex; justify-content: space-between; align-items: center;">
+                🎒 我的背包
+                <button class="btn-small" style="background-color: #e67e22;" onclick="app.craftSpecialItem()">🔨 合成专属</button>
+            </div>
+            <div id="inventory-list" class="inventory-container"></div>
+            <hr>
+            <div class="section-title">📜 属性与词条面板</div>
+            <div id="entries-list" class="entries-container"></div>
+        </div>
+
+        <div class="main-content">
+            <div class="nav">
+                <button class="tab-btn active" onclick="app.switchTab('tasks')">📋 任务终端</button>
+                <button class="tab-btn" onclick="app.switchTab('draw')">🎰 抽卡中心</button>
+                <button class="tab-btn" onclick="app.switchTab('season')">🏆 赛季宏愿</button>
+                <button class="tab-btn" onclick="app.switchTab('calc')">💰 资产结算</button>
+                <button class="tab-btn" onclick="app.switchTab('logs')">📝 运行日志</button>
+                <button class="tab-btn" onclick="app.switchTab('editor')">⚙️ 局内编辑器</button>
+            </div>
+
+            <div id="tab-tasks" class="tab-content active">
+                <div class="card full-width" style="margin: 0 auto; border-color: #4dabf7; background: rgba(15, 52, 96, 0.2);">
+                    <h2 style="color: #4dabf7; margin-top: 0;">📅 每日指令 (主线核心)</h2>
+                    <p style="color: #aaa; font-size: 13px;">请如实汇报今日的工作完成情况。这是你维持生存、获取声望与抽卡资源的生命线。</p>
+                    <div style="display: flex; gap: 15px; margin-top: 25px;">
+                        <button class="btn" style="background-color: #2ecc71; color: #000; font-size: 18px;" onclick="taskSystem.completeDaily()">✅ 任务完成 (前往抽卡)</button>
+                        <button class="btn" style="background-color: #e74c3c; color: #fff; font-size: 18px;" onclick="taskSystem.failDaily()">💀 任务失败 (触发清算)</button>
+                    </div>
+                </div>
+                <div id="active-quests-container" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-top: 25px; text-align: left; align-items: start;"></div>
+            </div>
+
+            <div id="tab-draw" class="tab-content">
+                <button class="btn btn-action" onclick="app.drawAll()">⚡ 执行今日常规抽取</button>
+                <h2 style="margin-top: 30px;">🎯 主线抉择 (<span id="draw-choice-title">2选1</span>)</h2>
+                <div class="card-container" id="main-cards"><div class="card"><p style="color:#888;">点击上方按钮执行抽取...</p></div></div>
+                <hr>
+                <h2>🎁 盲盒物资掉落 (1 抽)</h2>
+                <div class="card-container" id="sub-card"><div class="card"><p style="color:#888;">等待抽取...</p></div></div>
+            </div>
+
+            <div id="tab-season" class="tab-content">
+                <div class="card-container" id="season-grid" style="align-items: flex-start;"></div>
+            </div>
+
+            <div id="tab-calc" class="tab-content">
+                <div class="card full-width" style="margin: 0 auto;">
+                    <h2>🧮 收益结算器 (一日一结)</h2>
+                    <p>基础加成 <span id="display-add" class="highlight">0</span> | 独立乘区 <span id="display-mult" class="highlight">1.0</span></p>
+                    <div style="display: flex; gap: 15px;">
+                        <div class="input-group" style="flex:1;"><label>基础赏金：</label><input type="number" id="base-money" placeholder="例: 10/12"></div>
+                        <div class="input-group" style="flex:1;"><label style="color:#51cf66;">支线/额外资金：</label><input type="number" id="extra-money" placeholder="无视衰减全额放大"></div>
+                    </div>
+                    
+                    <div style="font-size: 12px; color: #f1c40f; margin-bottom: 15px; background: rgba(241,196,15,0.1); padding: 8px; border-radius: 4px; border-left: 3px solid #f1c40f;">
+                        🏅 扫描系统：结算时将自动识别您背包内的【学科荣誉殿堂勋章】。<br>若【支线资金】> 0，则自动将勋章数量按 1:1 追加至支线资金中！
+                    </div>
+                    
+                    <button class="btn btn-action" onclick="app.calculateMoney()" style="margin-top: 15px;">运算今日最终收益</button>
+                    <div style="margin-top: 20px; background: rgba(0,0,0,0.2); padding: 15px; border-radius: 8px;">
+                        <h3 style="margin: 0;">最终结算应得：<span id="final-money" style="color: #ff6b6b; font-size: 36px;">0.00</span> 元</h3>
+                        <p id="calc-detail-msg" style="color: #aaa; font-size: 13px; margin-top: 10px; line-height: 1.5;"></p>
+                    </div>
+                </div>
+            </div>
+
+            <div id="tab-logs" class="tab-content">
+                <div class="card full-width" style="margin: 0 auto; text-align: left;">
+                    <h2 style="margin-top: 0; color: #4dabf7;">📝 终端运行底层日志</h2>
+                    <div id="sys-logs" style="max-height: 400px; overflow-y: auto; background: #0b1120; padding: 15px; border-radius: 6px; font-family: monospace; font-size: 13px; color: #a9a9a9; border: 1px solid #0f3460; line-height: 1.6;"></div>
+                </div>
+            </div>
+
+            <div id="tab-editor" class="tab-content">
+                <div class="card-container" style="align-items: flex-start;">
+                    <div class="card" style="width: 45%;">
+                        <h2 style="color: #fff;">⚙️ 1. 基础属性与档案控制</h2>
+                        <div class="input-group"><label>声望 (修改自动触发判定)：</label><input type="number" id="edit-rep"></div>
+                        <div class="input-group"><label>初始加法底座：</label><input type="number" step="0.01" id="edit-add"></div>
+                        <div class="input-group"><label>初始乘法底座：</label><input type="number" step="0.01" id="edit-mult"></div>
+                        <div style="display: flex; gap: 10px; margin-top: 20px;">
+                            <button class="btn" style="flex:1;" onclick="app.saveEditor()">💾 保存修改</button>
+                            <button class="btn" style="background-color: #e67e22; flex:1;" onclick="app.hardReset()">⚠️ 删档重置</button>
+                        </div>
+                        <hr style="border-color:#333;">
+                        <label style="color:#a9a9a9; font-size:12px; display:block; margin-bottom:10px;">将档案下载为 json 文件修改后可上传覆盖。</label>
+                        <div style="display: flex; gap: 10px;">
+                            <button class="btn btn-small" style="flex:1; background-color: #3498db;" onclick="archiveSystem.exportData(app.playerData)">📥 导出本地档案</button>
+                            <button class="btn btn-small" style="flex:1; background-color: #9b59b6;" onclick="archiveSystem.triggerImport()">📤 导入本地档案</button>
+                            <input type="file" id="import-file" accept=".json" style="display:none;" onchange="archiveSystem.importData(event, (data)=>{ app.playerData=data; app.updateDashboard(); alert('✅ 导入成功'); })">
+                        </div>
+                    </div>
+                    
+                    <div class="card" style="width: 45%;">
+                        <h2 style="color: #2ecc71;">📦 2. 强行发配物资</h2>
+                        <div class="input-group"><label>📜 发放词条：</label><select id="admin-entry-select" class="custom-select dyn-entry-select"></select><button class="btn btn-small" style="margin-top: 8px; background-color:#2ecc71; color:#000;" onclick="app.adminAdd('entry')">注入词条</button></div>
+                        <div class="input-group"><label>🎒 发放道具：</label><select id="admin-item-select" class="custom-select dyn-item-select"></select><button class="btn btn-small" style="margin-top: 8px; background-color:#2ecc71; color:#000;" onclick="app.adminAdd('item')">发配道具</button></div>
+                        <div class="input-group"><label style="color:#f1c40f;">🌟 发放专属：</label><select id="admin-special-select" class="custom-select dyn-special-select" style="border-color:#f1c40f;"></select><button class="btn btn-small" style="margin-top: 8px; background-color:#f1c40f; color:#000;" onclick="app.adminAdd('special')">发配专属</button></div>
+                    </div>
+                    
+                    <div class="card" style="width: 45%; margin-top: 20px; border-color: #e74c3c;">
+                        <h2 style="color: #e74c3c;">🗑️ 3. 强行销毁与回溯</h2>
+                        <div class="input-group"><label style="color:#e74c3c;">🗑️ 剥离词条：</label><select id="admin-remove-entry-select" class="custom-select" style="border-color:#e74c3c;"></select><button class="btn btn-small" style="margin-top: 8px; background-color:#e74c3c;" onclick="app.adminRemoveEntry()">强制剥离</button></div>
+                        <div class="input-group"><label style="color:#e74c3c;">🗑️ 销毁道具：</label><select id="admin-remove-item-select" class="custom-select" style="border-color:#e74c3c;"></select><button class="btn btn-small" style="margin-top: 8px; background-color:#e74c3c;" onclick="app.adminRemoveItem()">强制销毁</button></div>
+                        <hr style="border-color:#e74c3c; opacity:0.5;">
+                        <div class="input-group">
+                            <label style="color:#f1c40f;">⏪ 回溯赛季宏愿：</label>
+                            <select id="admin-reset-season-select" class="custom-select" style="border-color:#f1c40f;"><option value="1">第一赛季：211</option><option value="2">第二赛季：985</option><option value="3">第三赛季：630分</option></select>
+                            <button class="btn btn-small" style="margin-top: 8px; background-color:#f1c40f; color:#000;" onclick="app.adminResetSeason()">时光倒流重置</button>
+                        </div>
+                    </div>
+                    
+                    <div class="card" style="width: 45%; margin-top: 20px; border-color: #9b59b6;">
+                        <h2 style="color: #9b59b6;">🎁 4. 自由裁量直接奖励</h2>
+                        <div class="input-group"><label>增加声望：</label><input type="number" id="npc-direct-rep" placeholder="填入声望点数"></div>
+                        <div class="input-group"><label>发放词条：</label><select id="npc-direct-entry" class="custom-select dyn-entry-select"></select></div>
+                        <div class="input-group"><label>发放道具：</label><select id="npc-direct-item" class="custom-select dyn-item-select"></select></div>
+                        <button class="btn btn-action" style="margin-top: 15px; background-color: #9b59b6;" onclick="app.npcDirectReward()">⚡ 一键注入底座</button>
+                    </div>
+
+                    <div class="card" style="width: 45%; margin-top: 20px; border-color: #3b82f6;">
+                        <h2 style="color: #3b82f6;">📜 5. 发布支线悬赏单</h2>
+                        <div class="input-group"><label>任务描述 (必填)：</label><input type="text" id="npc-quest-desc" placeholder="例如: 帮老师批改作业"></div>
+                        <div style="display:flex; gap:10px;">
+                            <div class="input-group" style="flex:1;"><label>系统资金：</label><input type="number" id="npc-quest-money" placeholder="(元)"></div>
+                            <div class="input-group" style="flex:1;"><label>声望奖励：</label><input type="number" id="npc-quest-rep" placeholder="点数"></div>
+                            <div class="input-group" style="flex:1;"><label style="color:#51cf66;">现实红包：</label><input type="number" id="npc-quest-cash" placeholder="现金(元)"></div>
+                        </div>
+                        <div style="display:flex; gap:10px;">
+                            <div class="input-group" style="flex:1;"><label>奖励词条：</label><select id="npc-quest-entry" class="custom-select dyn-entry-select"></select></div>
+                            <div class="input-group" style="flex:1;"><label>奖励道具：</label><select id="npc-quest-item" class="custom-select dyn-item-select"></select></div>
+                        </div>
+                        <button class="btn btn-action" style="margin-top: 15px; background-color: #3b82f6;" onclick="app.npcPublishQuest()">📢 发布支线指令</button>
+                    </div>
+
+                    <div class="card" style="width: 45%; margin-top: 20px; border-color: #e67e22;">
+                        <h2 style="color: #e67e22;">⚔️ 6. 发布分级极限挑战</h2>
+                        <div class="input-group"><label style="color:#fff;">📅 挑战目标日期：</label><input type="date" id="npc-challenge-date"></div>
+                        <div id="challenge-levels-container">
+                            <div class="challenge-level-block">
+                                <hr style="border-color:#e67e22; opacity:0.3; margin:15px 0;">
+                                <h4 style="margin:0 0 10px 0; color:#e67e22;">📍 第 1 难度级别</h4>
+                                <div class="input-group"><input type="text" id="clv-desc-1" placeholder="该级别难度描述 (必填)" style="border-color:#e67e22;"></div>
+                                <div style="display:flex; gap:10px;">
+                                    <div class="input-group" style="flex:1;"><input type="number" id="clv-money-1" placeholder="系统资金"></div>
+                                    <div class="input-group" style="flex:1;"><input type="number" id="clv-rep-1" placeholder="奖励声望"></div>
+                                    <div class="input-group" style="flex:1;"><input type="number" id="clv-cash-1" placeholder="现实红包" style="border-color:#51cf66;"></div>
+                                </div>
+                                <div style="display:flex; gap:10px;">
+                                    <div class="input-group" style="flex:1;"><select id="clv-entry-1" class="custom-select dyn-entry-select"></select></div>
+                                    <div class="input-group" style="flex:1;"><select id="clv-item-1" class="custom-select dyn-item-select"></select></div>
+                                </div>
+                            </div>
+                        </div>
+                        <button class="btn btn-small" style="margin-top:10px; background-color:transparent; border: 1px dashed #e67e22; color:#e67e22;" onclick="app.addChallengeLevel()">➕ 增加一个可选难度目标</button>
+                        <button class="btn btn-action" style="margin-top: 15px; background-color: #e67e22;" onclick="app.npcPublishChallenge()">🔥 发布多级挑战令</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="archive-modal" class="modal-overlay" style="display: none;">
+        <div class="modal-content card" style="width: 500px; border-color: #3498db;">
+            <h2 style="color: #3498db; margin-top:0;">☁️ 多端档案检测</h2>
+            <p style="color: #ccc; font-size: 14px; margin-bottom: 20px;">特工 <b id="archive-username" style="color:#f1c40f;"></b>，请选择你要加载的时空锚点：</p>
+            <div style="display: flex; gap: 15px;">
+                <div class="card" style="flex:1; border: 1px dashed #2ecc71; cursor:pointer; text-align:center;" onclick="app.selectArchive('local')">
+                    <h3 style="color:#2ecc71; margin-top:0; font-size:16px;">💻 本地设备档案</h3>
+                    <p id="local-archive-info" style="font-size:12px; color:#aaa; line-height: 1.6; margin:0;"></p>
+                </div>
+                <div class="card" style="flex:1; border: 1px dashed #3498db; cursor:pointer; text-align:center;" onclick="app.selectArchive('cloud')">
+                    <h3 style="color:#3498db; margin-top:0; font-size:16px;">☁️ 神枢云端档案</h3>
+                    <p id="cloud-archive-info" style="font-size:12px; color:#aaa; line-height: 1.6; margin:0;"></p>
+                </div>
+            </div>
+            <div style="margin-top: 20px;">
+                <button class="btn" style="background-color: #555; width:100%;" onclick="app.cancelLogin()">✖ 取消并返回登录</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="item-modal" class="modal-overlay" style="display: none;"><div class="modal-content card"><div class="img-placeholder" id="modal-img"><span>✦</span></div><h2 id="modal-title"></h2><p id="modal-desc"></p><div style="display: flex; gap: 10px; margin-top: 20px;"><button class="btn" style="background-color:#555;" onclick="app.closeItemModal()">取消</button><button class="btn btn-action" onclick="app.confirmUseItem()">确认使用</button></div></div></div>
+    <div id="penalty-modal" class="modal-overlay" style="display: none;"><div class="modal-content card" style="width: 450px; border-color: #e74c3c;"><h2 id="penalty-title" style="color: #e74c3c;">💀 惩罚清算</h2><p id="penalty-desc" style="color: #ccc; font-size: 14px; margin-bottom: 20px; line-height: 1.5;"></p><div id="penalty-grid" style="display: flex; flex-wrap: wrap; gap: 10px; max-height: 250px; overflow-y: auto; padding-right: 5px;"></div><div style="display: flex; gap: 10px; margin-top: 25px;"><button class="btn btn-action" id="confirm-penalty-btn" style="flex:1; background-color: #e74c3c;" disabled onclick="taskSystem.confirmPenalty()">忍痛执行</button></div></div></div>
+    <div id="destroy-modal" class="modal-overlay" style="display: none;"><div class="modal-content card" style="width: 450px;"><h2 style="color: #ff6b6b;">🔥 契约生效：献祭仪式</h2><p id="destroy-desc"></p><div id="destroy-inventory" style="display: flex; flex-wrap: wrap; gap: 10px; max-height: 250px; overflow-y: auto;"></div><div style="display: flex; gap: 10px; margin-top: 25px;"><button class="btn" style="background-color: #555;" onclick="app.closeDestroyModal()">放弃</button><button class="btn btn-action" id="confirm-destroy-btn" disabled onclick="app.confirmDestroy()">激活</button></div></div></div>
+    <div id="special-action-modal" class="modal-overlay" style="display: none;"><div class="modal-content card" style="width: 450px;"><h2 id="special-action-title"></h2><p id="special-action-desc"></p><div id="special-action-grid" style="display: flex; flex-wrap: wrap; gap: 10px; max-height: 250px; overflow-y: auto;"></div><div style="display: flex; gap: 10px; margin-top: 25px;"><button class="btn" style="background-color: #555;" onclick="app.closeSpecialActionModal()">取消</button><button class="btn btn-action" id="confirm-special-action-btn" disabled onclick="app.confirmSpecialAction()">确认</button></div></div></div>
+    <div id="extra-draw-modal" class="modal-overlay" style="display: none;"><div class="modal-content" style="width: 750px; background: transparent; border: none; box-shadow: none;"><h2 id="extra-draw-title" style="color: #4dabf7; background: #16213e; padding: 15px; border-radius: 10px; border: 2px solid #0f3460;"></h2><div id="extra-draw-cards" style="display: flex; gap: 20px; justify-content: center; margin-top: 20px; flex-wrap: wrap;"></div><div id="extra-draw-actions" style="margin-top: 20px; text-align: center;"><button class="btn btn-action" style="width: 100%; max-width: 400px; display: none;" id="extra-draw-double-btn" onclick="app.confirmDoubleTake()">🔥 强行双持并升级 N 级词条</button><button class="btn" style="background:#555; margin-top: 15px;" onclick="app.closeExtraDrawModal()">取消</button></div></div></div>
+    <div id="shield-modal" class="modal-overlay" style="display: none;"><div class="modal-content card" style="width: 450px; border-color: #f1c40f;"><h2 style="color: #f1c40f;">🛡️ 阵线庇护：手动重载</h2><div style="display: flex; flex-direction: column; gap: 12px; margin-top: 20px;"><button class="btn" style="background-color: #2ecc71; color: #000;" onclick="app.resolveShieldDefense('entry')">🛡️ 协议 Alpha：锁定保护所有词条</button><button class="btn" style="background-color: #3498db; color: #fff;" onclick="app.resolveShieldDefense('item')">🛡️ 协议 Beta：保护 1 个专属</button><button class="btn" style="background-color: #e74c3c; color: #fff;" onclick="document.getElementById('shield-modal').style.display='none'">取消</button></div></div></div>
+    <div id="shield-item-select-modal" class="modal-overlay" style="display: none;"><div class="modal-content card" style="width: 400px;"><h3>选择要保护的专属级道具：</h3><div id="shield-item-list" style="display:flex; flex-direction:column; gap:10px; margin:15px 0;"></div><button class="btn" style="background-color:#555;" onclick="document.getElementById('shield-item-select-modal').style.display='none'">返回</button></div></div>
+
+    <script src="data.js"></script>
+    <script src="reputation.js"></script>
+    <script src="season.js"></script>
+    <script src="cloud.js"></script>     
+    <script src="archive.js"></script>   
+    <script src="effects.js"></script>
+    <script src="tasks.js"></script>
+    <script src="app.js"></script>       
+</body>
+</html>
