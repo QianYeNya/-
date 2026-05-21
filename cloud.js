@@ -2,7 +2,7 @@
  * ☁️ 校园肉鸽终端 - Gitee 云同步引擎 (完整版)
  */
 
-const cloudSystem = {
+window.cloudSystem = {
     enableCloud: true,
     GITEE_TOKEN: "8808042adc1356fdd75500e85acc1567", // 记得把这里换成你真正的 Token
 
