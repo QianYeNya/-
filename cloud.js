@@ -29,6 +29,7 @@ const cloudSystem = {
 
     // 上传存档
     // 修复版：添加了 Base64 编码，解决数据库不兼容 Emoji 的报错
+    // 修复版：添加了 Base64 编码，解决数据库不兼容 Emoji 的报错
     upload: async function(username, data) {
         if (!this.enableCloud || this.GITEE_TOKEN.includes("TOKEN")) return false;
         try {
@@ -83,4 +84,4 @@ const cloudSystem = {
             }
             return null;
         } catch (err) { return null; }
-    }
+    };
