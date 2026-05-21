@@ -4,7 +4,7 @@
 
 const cloudSystem = {
     enableCloud: true,
-    GITEE_TOKEN: "你的_TOKEN", // 记得把这里换成你真正的 Token
+    GITEE_TOKEN: "8808042adc1356fdd75500e85acc1567", // 记得把这里换成你真正的 Token
 
     _getHeaders: function() {
         return {
