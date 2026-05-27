@@ -715,9 +715,28 @@ const app = {
     generateDraw: function(type) {
         if (type === 'main') {
             const isRep = this.getWeight([{t:0, w:80}, {t:1, w:20}]).t;
-            if (isRep) { const rep = this.getWeight([{v:0, w:70}, {v:1, w:30}]).v; return { level: 'Rep', ...gameData.main.Rep[rep] }; } 
-            else { const lvl = this.getWeight([{l:'N',w:70},{l:'R',w:20},{l:'SR',w:8},{l:'SSR',w:2}]).l; return { level: lvl, ...this.getRand(gameData.main[lvl]) }; }
-        } else { const lvl = this.getWeight([{l:'N',w:80},{l:'R',w:15},{l:'SR',w:4},{l:'SSR',w:1}]).l; return { level: lvl, name: this.getRand(gameData.sub[lvl]), img: "" }; }
+            if (isRep) { 
+                const rep = this.getWeight([{v:0, w:70}, {v:1, w:30}]).v; 
+                return { level: 'Rep', ...gameData.main.Rep[rep] }; 
+            } 
+            else { 
+                // 👇 万分比权重，精准控制三选一的最终综合期望
+                // SSR 单抽 0.67% -> 3选1总概率 2%
+                // SR  单抽 3.45% -> 3选1总概率 10%
+                // 剩余权重分给 N (70%) 和 R (25.88%)
+                const lvl = this.getWeight([
+                    {l:'N', w:7000},
+                    {l:'R', w:2588},
+                    {l:'SR', w:345},
+                    {l:'SSR', w:67}
+                ]).l; 
+                return { level: lvl, ...this.getRand(gameData.main[lvl]) }; 
+            }
+        } else { 
+            // 盲盒属于单抽，继续保持常规的百分比权重即可
+            const lvl = this.getWeight([{l:'N',w:80},{l:'R',w:15},{l:'SR',w:4},{l:'SSR',w:1}]).l; 
+            return { level: lvl, name: this.getRand(gameData.sub[lvl]), img: "" }; 
+        }
     },
     
     drawAll: function() {
